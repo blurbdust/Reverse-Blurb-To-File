@@ -1,5 +1,6 @@
-Reverse Hash Writeup
+#Reverse Hash Readme
 
+#IMPORTANT: Comment out lines 114-116 && 120-138 for this to run as of 8/10/16 @ 1:28am
 
 Specs of “hash”:
 An example hash for a file with the arguments of “-i ./test.txt”
