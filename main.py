@@ -50,7 +50,7 @@ def main(argv):
 
 def file_to_hash(tohash):
     tohash.close()
-    print "Coming soon if I can actually get the motivation to work on this."
+    print "Coming soon... if I can actually get the motivation to work on this."
 
 
 def hash_to_file(inputhash, block_count):
