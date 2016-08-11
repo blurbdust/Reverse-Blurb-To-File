@@ -11,6 +11,7 @@ block_size = 4
 block_count = 4
 start = 0
 end = 0
+global_index = 0
 
 def main(argv):
 #VARIABLES
@@ -119,7 +120,8 @@ def hash_to_file(inputhash, block_count):
     for j in range(0, len(string_of_file) - 1):
         if (string_of_file[j] != '*'):
             blacklisted_index.append(j)
-            
+
+    print "Blacklisted index", blacklisted_index
     string_of_file = string_of_file.replace('*', '0')
     print string_of_file
 
@@ -143,42 +145,41 @@ def hash_to_file(inputhash, block_count):
     f = open(filename, 'w')
     f.write(string_of_file)
     f.close()
+    
 def increment_by_one(string_of_file):
     #THIS IS BROKEN BUT I'M TIRED
-    index = 0;
-    last_index = 0;
     hexval = ''
+    global global_index
     if string_of_file.count('F') == 83:
         print "Failed"
-    for i in range(0, len(string_of_file)):
-        if i in blacklisted_index:
-            #skip
-            index = i
+    if global_index in blacklisted_index:
+        #skip
+        global_index += 1
+    else:
+        hexval = string_of_file[global_index]
+        val = int(hexval, 16)
+        #val = val % 16
+        val += 1
+        #print val
+        if val % 16 == 10:
+            hexval = 'A'
+        elif val % 16 == 11:
+            hexval = 'B'
+        elif val % 16 == 12:
+            hexval = 'C'
+        elif val % 16 == 13:
+            hexval = 'D'
+        elif val % 16 == 14:
+            hexval = 'E'
+        elif val % 16 == 15:
+            hexval = 'F'
         else:
-            hexval = string_of_file[i]
-            val = int(hexval, 16)
-            #val = val % 16
-            val += 1
-            #print val
-            if val % 16 == 10:
-                hexval = 'A'
-            elif val % 16 == 11:
-                hexval = 'B'
-            elif val % 16 == 12:
-                hexval = 'C'
-            elif val % 16 == 13:
-                hexval = 'D'
-            elif val % 16 == 14:
-                hexval = 'E'
-            elif val % 16 == 15:
-                hexval = 'F'
-            else:
-                hexval = val % 16
-            #print hexval
-            list1 = list(string_of_file)
-            list1[i] = str(hexval)
-            string_of_file = ''.join(list1)
-            #print string_of_file
+            hexval = val % 16
+        #print hexval
+        list1 = list(string_of_file)
+        list1[global_index] = str(hexval)
+        string_of_file = ''.join(list1)
+        print string_of_file
             
     return string_of_file;
 
