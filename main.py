@@ -23,6 +23,7 @@ def main(argv):
     start = timer()
 #END OF VARIABLES
 
+
     try:
         opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
     except getopt.GetoptError:
