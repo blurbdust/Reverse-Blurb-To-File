@@ -42,8 +42,11 @@ An example hash for a file with the arguments of “-i ./test.txt”
 
 * Checksum of file 
    * 9180801A5E24A242EB91953E41394EFB
+
+
 So the whole hash is:
 `746573742E747874-00-49662079-20-6D65616E-20-2120416C-20-20224A6F-12-9180801A5E24A242EB91953E41394EFB`
+
 
 Another thought I had could be each split of the file has it’s own checksum for larger files
 
