@@ -1,11 +1,16 @@
 #!/usr/bin/python
 
 import sys, getopt, hashlib
+from timeit import default_timer as timer
 
 block_list = []
 byte_list = []
+byte = []
+blacklisted_index = []
 block_size = 4
 block_count = 4
+start = 0
+end = 0
 
 def main(argv):
 #VARIABLES
@@ -13,7 +18,7 @@ def main(argv):
     inputhash = "&"
     inputfile = "^"
     output = ""
-
+    start = timer()
 #END OF VARIABLES
 
     try:
@@ -50,7 +55,7 @@ def main(argv):
 
 def file_to_hash(tohash):
     tohash.close()
-    print "Coming soon... if I can actually get the motivation to work on this."
+    print "Coming soon if I can actually get the motivation to work on this."
 
 
 def hash_to_file(inputhash, block_count):
@@ -89,7 +94,7 @@ def hash_to_file(inputhash, block_count):
     for i in range(0, len(byte_list)):
         for x in range(i, block_count):
             for j in range(0, (int(byte_list[i]) / (2))):
-                globals()['block%s' % x] = globals()['block%s' % x] + "00"
+                globals()['block%s' % x] = globals()['block%s' % x] + "**"
             break
    
     print block0
@@ -104,37 +109,77 @@ def hash_to_file(inputhash, block_count):
 
     print block
     string_of_file = ''.join(block)
-    print string_of_file
     
     print "----"
+
+    for i in range(1, len(string_of_file) - 1):
+        tmp = string_of_file[i] + string_of_file[i - 1]
+        byte.append(tmp)
+
+    for j in range(0, len(string_of_file) - 1):
+        if (string_of_file[j] != '*'):
+            blacklisted_index.append(j)
+            
+    string_of_file = string_of_file.replace('*', '0')
+    print string_of_file
+
+    print "----MD5 Hashes Below----"
     
     print hashlib.md5(string_of_file).hexdigest().upper()
     print hash_list[total_del]
     
     while(hashlib.md5(string_of_file).hexdigest().upper() != hash_list[total_del]):
         #Increment and try again
-        string_of_file = increment_by_one(string_of_file, block_list, block_size, block_count, byte_list)
-        
+        string_of_file = increment_by_one(string_of_file)
+   
     print "Yay!"
+    print "----"
+    print string_of_file
+    print "----"
+    end = timer()
 
-def increment_by_one(string_of_file, block_list, block_size, block_count, byte_list):
+    print "It took me ", end-start, " seconds!"
+    
+    f = open(filename, 'w')
+    f.write(string_of_file)
+    f.close()
+def increment_by_one(string_of_file):
     #THIS IS BROKEN BUT I'M TIRED
     index = 0;
     last_index = 0;
     hexval = ''
-    for i in range(0, len(string_of_file) - 1):
-        if (0 <= i <= ((block_size * 2) - 1)):
-            index += 1
-            print "Skip this"
-        elif (((block_size * 2) - 1) <= i <= ((block_size * 2) - 1) + int(byte_list[index]) - 1):
-            print "Skip this too"
-            index += 1
+    if string_of_file.count('F') == 83:
+        print "Failed"
+    for i in range(0, len(string_of_file)):
+        if i in blacklisted_index:
+            #skip
+            index = i
         else:
-            hexval = string_of_file[i] + string_of_file[i - 1]
+            hexval = string_of_file[i]
             val = int(hexval, 16)
-            val =+ 1
-            hexval = hex(val)
-
+            #val = val % 16
+            val += 1
+            #print val
+            if val % 16 == 10:
+                hexval = 'A'
+            elif val % 16 == 11:
+                hexval = 'B'
+            elif val % 16 == 12:
+                hexval = 'C'
+            elif val % 16 == 13:
+                hexval = 'D'
+            elif val % 16 == 14:
+                hexval = 'E'
+            elif val % 16 == 15:
+                hexval = 'F'
+            else:
+                hexval = val % 16
+            #print hexval
+            list1 = list(string_of_file)
+            list1[i] = str(hexval)
+            string_of_file = ''.join(list1)
+            #print string_of_file
+            
     return string_of_file;
 
 if __name__ == "__main__":
