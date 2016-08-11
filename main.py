@@ -19,6 +19,7 @@ def main(argv):
     inputhash = "&"
     inputfile = "^"
     output = ""
+    output_string = ""
     start = timer()
 #END OF VARIABLES
 
@@ -45,21 +46,30 @@ def main(argv):
             print "Error! Probably file not found... I don't know enough python yet..."
             sys.exit(2)
        
-        file_to_hash(tohash)
+        output_string = file_to_hash(tohash, inputfile)
+        print output_string
     elif inputhash is not "&":
-        hash_to_file(inputhash, block_count)
+        hash_to_file(inputhash)
     else:
         print "Something bad happened."
         sys.exit(2)
 
     
 
-def file_to_hash(tohash):
-    tohash.close()
-    print "Coming soon if I can actually get the motivation to work on this."
+def file_to_hash(tohash, filename):
+    not_hash = ""
+    string_of_file = tohash.read()
+    md5hash = hashlib.md5(string_of_file).hexdigest().upper()
+    #For now we are assuming defaults
+    
+    tmp = filename.encode('hex').upper()
+    print tmp
+    not_hash += tmp
+    not_hash += '-'
+    
+    hex_of_file = string_of_file.encode('hex').upper()
 
-
-def hash_to_file(inputhash, block_count):
+def hash_to_file(inputhash):
     block = []
     maybe_file = ""
     #inputhash.split(h="-", num=string.count(h))
@@ -130,9 +140,14 @@ def hash_to_file(inputhash, block_count):
     print hashlib.md5(string_of_file).hexdigest().upper()
     print hash_list[total_del]
     
+    global global_index
+    
     while(hashlib.md5(string_of_file).hexdigest().upper() != hash_list[total_del]):
         #Increment and try again
-        string_of_file = increment_by_one(string_of_file)
+        if global_index not in blacklisted_index:
+            string_of_file = increment_by_one(string_of_file, global_index)
+        else:
+            global_index += 1
    
     print "Yay!"
     print "----"
@@ -145,43 +160,27 @@ def hash_to_file(inputhash, block_count):
     f = open(filename, 'w')
     f.write(string_of_file)
     f.close()
+
+def increment_by_one(string_of_file, index):
+
+    #The credit goes to Big-E for this function!
     
-def increment_by_one(string_of_file):
-    #THIS IS BROKEN BUT I'M TIRED
-    hexval = ''
-    global global_index
-    if string_of_file.count('F') == 83:
-        print "Failed"
-    if global_index in blacklisted_index:
-        #skip
-        global_index += 1
-    else:
-        hexval = string_of_file[global_index]
-        val = int(hexval, 16)
-        #val = val % 16
-        val += 1
-        #print val
-        if val % 16 == 10:
-            hexval = 'A'
-        elif val % 16 == 11:
-            hexval = 'B'
-        elif val % 16 == 12:
-            hexval = 'C'
-        elif val % 16 == 13:
-            hexval = 'D'
-        elif val % 16 == 14:
-            hexval = 'E'
-        elif val % 16 == 15:
-            hexval = 'F'
-        else:
-            hexval = val % 16
-        #print hexval
-        list1 = list(string_of_file)
-        list1[global_index] = str(hexval)
-        string_of_file = ''.join(list1)
-        print string_of_file
-            
-    return string_of_file;
+    hexval = string_of_file[index]              # Get the char that needs to be incremented    
+    val = int ( hexval, 16 )                    # Convert the char to an int [0-16]
+   
+    val = (val + 1) % 0x10                      # Increment the int, this will be used to represent the next char
+    hexval = "%X" % val                         # Convert the int back to a hex value
+   
+    list1 = list(string_of_file)                # Do stupid python stuff
+    list1[index] = hexval                       # Save new value to array
+    string_of_file = ''.join(list1)             # Do more stupid python stuff
+
+    if hexval == '0' and (index + 1) < len(string_of_file): # Determine if next value to right needs to increment by one
+        return increment_by_one(string_of_file, index + 1)  # Recursivelly call this function for value to right
+
+    #print string_of_file
+    return string_of_file;                      # Return from first instance of recursive functions
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
