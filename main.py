@@ -12,10 +12,13 @@ block_count = 4
 start = 0
 end = 0
 global_index = 0
+string_of_file = ""
+temp4 = ""
+actual_hash = ""
 
 def main(argv):
 #VARIABLES
-    help_message = "main.py -i <inputfile or hash> -o <outputfile if hash>"
+    help_message = "main.py -i <inputfile or hash> -o <outputfile if hash> -p <progress file>"
     inputhash = "&"
     inputfile = "^"
     output = ""
@@ -25,7 +28,7 @@ def main(argv):
 
 
     try:
-        opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
+        opts, args = getopt.getopt(argv,"hi:o:p:",["ifile=","ofile=","pfile="])
     except getopt.GetoptError:
         print help
         sys.exit(2)
@@ -40,6 +43,11 @@ def main(argv):
                 inputhash = arg
         elif opt in ("-o", "--ofile"):
             output = arg
+        elif opt in ("-p", "--progress"):
+            #with open(arg) as f:
+                #progress_lines = f.readlines()
+            progress_lines = [line.rstrip('\n') for line in open(arg)]
+            continuing_hash_to_file(progress_lines)
     if inputfile is not "^":
         try:
             tohash = open(inputfile, "rb")
@@ -59,6 +67,7 @@ def main(argv):
 
 def file_to_hash(tohash, filename):
     not_hash = ""
+    global string_of_file
     string_of_file = tohash.read()
     md5hash = hashlib.md5(string_of_file).hexdigest().upper()
     #For now we are assuming defaults
@@ -73,12 +82,16 @@ def file_to_hash(tohash, filename):
 def hash_to_file(inputhash):
     block = []
     maybe_file = ""
+    global string_of_file
+    global actual_hash
     #inputhash.split(h="-", num=string.count(h))
     total_del = inputhash.count('-')
     hash_list = inputhash.split('-')
     print hash_list
+    global temp4
     filename = hash_list[0]
     filename = bytearray.fromhex(filename).decode()
+    temp4 = filename
     print filename
     pattern = hash_list[1]
     if "00" in pattern:
@@ -140,6 +153,7 @@ def hash_to_file(inputhash):
     
     print hashlib.md5(string_of_file).hexdigest().upper()
     print hash_list[total_del]
+    actual_hash = hash_list[total_del]
     
     global global_index
     
@@ -158,7 +172,7 @@ def hash_to_file(inputhash):
 
     print "It took me ", end-start, " seconds!"
     
-    f = open(filename, 'w')
+    f = open(filename, 'w+')
     f.write(string_of_file)
     f.close()
 
@@ -182,6 +196,56 @@ def increment_by_one(string_of_file, index):
     #print string_of_file
     return string_of_file;                      # Return from first instance of recursive functions
 
+def continuing_hash_to_file(progress_lines):
+    print progress_lines
+    global string_of_file
+    global global_index
+    global blacklisted_index
+    string_of_file = progress_lines[0]
+    global_index = int(progress_lines[2])
+    #blacklisted_index = map(int, progress_lines[3])
+    #blacklisted_index = [int(i) for i in progress_lines[3]]
+    temp5 = progress_lines[3].replace('[', "").replace(']', "").split(',')
+    blacklisted_index = map(int, temp5)
+    while(hashlib.md5(string_of_file).hexdigest().upper() != progress_lines[1]):
+        #Increment and try again
+        if global_index not in blacklisted_index:
+            string_of_file = increment_by_one(string_of_file, global_index)
+        else:
+            global_index += 1
+
+    print "Yay!"
+    print "----"
+    print string_of_file
+    print "----"
+    end = timer()
+
+    print "It took me ", end-start, " seconds!"
+    
+    f = open(progress_lines[4], 'w+')
+    f.write(string_of_file)
+    f.close()
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    try:
+        main(sys.argv[1:])
+    except KeyboardInterrupt:
+        print "===============Program Ended because of interrupt==================="
+        print string_of_file
+        end = timer()
+        print "It took me ", end-start, " seconds until you stopped me!"
+        progress_filename = "progress_"
+        progress_filename += temp4
+        progress = open(progress_filename, "w+")
+        progress.write(string_of_file)
+        progress.write("\n")
+        progress.write(actual_hash)
+        progress.write("\n")
+        progress.write(str(global_index))
+        progress.write("\n")
+        progress.write(str(blacklisted_index))
+        progress.write("\n")
+        progress.write(temp4)
+        progress.close()
+        print "Dumping progress to file..."
+        sys.exit(0)
