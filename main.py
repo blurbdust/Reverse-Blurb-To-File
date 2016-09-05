@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, getopt, hashlib
+import sys, getopt, hashlib, thread
 from timeit import default_timer as timer
 
 block_list = []
@@ -9,12 +9,15 @@ byte = []
 blacklisted_index = []
 block_size = 4
 block_count = 4
+thread_count = 1
+current_thread = 1
 start = 0
 end = 0
 global_index = 0
 string_of_file = ""
-temp4 = ""
+temp4 = "" #I wrote this 2 days ago and I already forget what it's used for. I think it's the MD5 hash for use with resuming
 actual_hash = ""
+found = 0
 
 def main(argv):
 #VARIABLES
@@ -23,12 +26,14 @@ def main(argv):
     inputfile = "^"
     output = ""
     output_string = ""
+    global start
     start = timer()
+    global thread_count
 #END OF VARIABLES
 
 
     try:
-        opts, args = getopt.getopt(argv,"hi:o:p:",["ifile=","ofile=","pfile="])
+        opts, args = getopt.getopt(argv,"hi:o:p:t:",["ifile=","ofile=","pfile=","tfile="])
     except getopt.GetoptError:
         print help
         sys.exit(2)
@@ -48,6 +53,8 @@ def main(argv):
                 #progress_lines = f.readlines()
             progress_lines = [line.rstrip('\n') for line in open(arg)]
             continuing_hash_to_file(progress_lines)
+        elif opt in ("-t", "--thread", "--threads"):
+            thread_count = arg
     if inputfile is not "^":
         try:
             tohash = open(inputfile, "rb")
@@ -84,6 +91,7 @@ def hash_to_file(inputhash):
     maybe_file = ""
     global string_of_file
     global actual_hash
+    global found
     #inputhash.split(h="-", num=string.count(h))
     total_del = inputhash.count('-')
     hash_list = inputhash.split('-')
@@ -156,45 +164,44 @@ def hash_to_file(inputhash):
     actual_hash = hash_list[total_del]
     
     global global_index
-    
-    while(hashlib.md5(string_of_file).hexdigest().upper() != hash_list[total_del]):
-        #Increment and try again
-        if global_index not in blacklisted_index:
-            string_of_file = increment_by_one(string_of_file, global_index)
-        else:
-            global_index += 1
-   
-    print "Yay!"
-    print "----"
-    print string_of_file
-    print "----"
-    end = timer()
+    t = 0
+    try:
+        for t in range(0, thread_count):
+            thread.start_new_thread( compute_file, (hashlib.md5(string_of_file).hexdigest().upper(), actual_hash, ))
+    except:
+        print "Error: Unable to use threading"
 
-    print "It took me ", end-start, " seconds!"
-    
-    f = open(filename, 'w+')
-    f.write(string_of_file)
-    f.close()
+    print "Working..."
 
+    while(not found):
+        pass
+    
 def increment_by_one(string_of_file, index):
 
+    global thread_count
+    global current_thread                                   #I'm using gloabls here to hopefully speed up GPU processing
     #The credit goes to Big-E for this function!
     
-    hexval = string_of_file[index]              # Get the char that needs to be incremented    
-    val = int ( hexval, 16 )                    # Convert the char to an int [0-16]
-   
-    val = (val + 1) % 0x10                      # Increment the int, this will be used to represent the next char
-    hexval = "%X" % val                         # Convert the int back to a hex value
-   
-    list1 = list(string_of_file)                # Do stupid python stuff
-    list1[index] = hexval                       # Save new value to array
-    string_of_file = ''.join(list1)             # Do more stupid python stuff
+    hexval = string_of_file[index]                          # Get the char that needs to be incremented    
+    val = int ( hexval, 16 )                                # Convert the char to an int [0-16]
 
+    incremental = current_thread % thread_count
+   
+    val = (val + (incremental)) % 0x10                      # Increment the int, this will be used to represent the next char
+    hexval = "%X" % val                                     # Convert the int back to a hex value
+   
+    list1 = list(string_of_file)                            # Do stupid python stuff
+    list1[index] = hexval                                   # Save new value to array
+    string_of_file = ''.join(list1)                         # Do more stupid python stuff
+           
+    if (thread_count > 1):
+           current_thread += 1                              # Increment thread_count
+    
     if hexval == '0' and (index + 1) < len(string_of_file): # Determine if next value to right needs to increment by one
         return increment_by_one(string_of_file, index + 1)  # Recursivelly call this function for value to right
 
     #print string_of_file
-    return string_of_file;                      # Return from first instance of recursive functions
+    return string_of_file;                                  # Return from first instance of recursive functions
 
 def continuing_hash_to_file(progress_lines):
     print progress_lines
@@ -207,14 +214,38 @@ def continuing_hash_to_file(progress_lines):
     #blacklisted_index = [int(i) for i in progress_lines[3]]
     temp5 = progress_lines[3].replace('[', "").replace(']', "").split(',')
     blacklisted_index = map(int, temp5)
-    while(hashlib.md5(string_of_file).hexdigest().upper() != progress_lines[1]):
-        #Increment and try again
-        if global_index not in blacklisted_index:
-            string_of_file = increment_by_one(string_of_file, global_index)
-        else:
-            global_index += 1
+
+    t = 0
+    try:
+        for t in range(0, thread_count):
+            thread.start_new_thread( compute_file, hashlib.md5(string_of_file).hexdigest().upper(), progress_lines[1])
+    except:
+        print "Error: Unable to use threading"
 
     print "Yay!"
+    print "----"
+    print string_of_file
+    print "----"
+    global end
+    end = timer()
+
+    print "It took me ", end-start, " seconds!"
+    
+    f = open(progress_lines[4], 'w+')
+    f.write(string_of_file)
+    f.close()
+
+def compute_file(curent_hash, real_hash):
+    global found
+    while(curent_hash != real_hash):
+            #Increment and try again
+            if global_index not in blacklisted_index:
+                string_of_file = increment_by_one(string_of_file, global_index)
+            else:
+                global_index += 1
+
+    print "Yay!"
+    found = 1
     print "----"
     print string_of_file
     print "----"
@@ -222,7 +253,7 @@ def continuing_hash_to_file(progress_lines):
 
     print "It took me ", end-start, " seconds!"
     
-    f = open(progress_lines[4], 'w+')
+    f = open(filename, 'w+')
     f.write(string_of_file)
     f.close()
 
