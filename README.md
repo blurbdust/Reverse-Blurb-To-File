@@ -1,8 +1,11 @@
 #Reverse Hash Readme
 
+As of 9/6/2016 @ 2:52pm multi-core processing appears to work. I can in fact hit 100% CPU usage.
+http://imgur.com/a/NS6O4
+
 ~~#IMPORTANT: Comment out lines 114-116 && 120-138 for this to run as of 8/10/16 @ 1:28am~~
 
-Specs of “hash”:
+Specs of "hash":
 An example hash for a file with the arguments of “-i ./test.txt”
 * File name and extension’s hex value followed by hyphen
    * 746573742E747874
