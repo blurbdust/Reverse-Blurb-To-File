@@ -1,0 +1,2 @@
+For now if you are running from source you need a few extra packages.
+If on Windows, use: "python -m pip install pytools, mako, cffi"
