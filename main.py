@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 import sys, getopt, hashlib, thread
-import numpy as np
+#import numpy as np
 from timeit import default_timer as timer
 from multiprocessing import Process, Lock
-from numbapro import cuda
-from numba import *
+#from numbapro import cuda
+#from numba import *
 
 block_list = []
 byte_list = []
@@ -19,7 +19,6 @@ start = 0
 end = 0
 global_index = 0
 string_of_file = ""
-temp4 = "" #I wrote this 2 days ago and I already forget what it's used for. I think it's the MD5 hash for use with resuming
 actual_hash = ""
 found = 0
 
@@ -102,10 +101,8 @@ def hash_to_file(inputhash):
     total_del = inputhash.count('-')
     hash_list = inputhash.split('-')
     print hash_list
-    global temp4
     filename = hash_list[0]
     filename = bytearray.fromhex(filename).decode()
-    temp4 = filename
     print filename
     pattern = hash_list[1]
     if "00" in pattern:
@@ -173,41 +170,45 @@ def hash_to_file(inputhash):
     t = 0
     try:
         for t in range(0, int(thread_count)):
-            print t
-            #Process(target=compute_file, args=(hashlib.md5(string_of_file).hexdigest().upper(), actual_hash, string_of_file, found, global_index, blacklisted_index, thread_count, current_thread)).start()
-            thread.start_new_thread( compute_file, (hashlib.md5(string_of_file).hexdigest().upper(), actual_hash, string_of_file, found, global_index, blacklisted_index, thread_count, current_thread))
-    except KeyboardInterrupt:
-        dump_current_progress()
-
-    print "Working..."
+            globals()['Process-%s' % t] = Process(target=compute_file, args=(hashlib.md5(string_of_file).hexdigest().upper(), actual_hash, string_of_file, found, global_index, blacklisted_index, thread_count, current_thread, filename))
+            globals()['Process-%s' % t].start()
+            print "Working..."
+            #thread.start_new_thread( compute_file, (hashlib.md5(string_of_file).hexdigest().upper(), actual_hash, string_of_file, found, global_index, blacklisted_index, thread_count, current_thread))
+    except:
+        for t in range(0, int(thread_count)):
+            globals()['Process-%s' % t].join()
+            #Maybe I should put a lock here...
+        print "We are at the process spawn exception... Killing myself"
+        sys.exit(2)
 
     while(not found):
         pass
 
-def increment_by_one(string_of_file2, index, thread_count, current_thread):
+def increment_by_one(string_of_file2, index, thread_count, current_thread, filename):
     global string_of_file
     string_of_file = string_of_file2
+    #print string_of_file2
     #The credit goes to Big-E for this function!
-    hexval = string_of_file[index]                                                          # Get the char that needs to be incremented    
-    val = int ( hexval, 16 )                                                                # Convert the char to an int [0-16]
+    hexval = string_of_file[index]                                                                          # Get the char that needs to be incremented    
+    val = int ( hexval, 16 )                                                                                # Convert the char to an int [0-16]
 
     incremental = int(current_thread) % int(thread_count)
    
-    val = (val + (incremental)) % 0x10                                                      # Increment the int, this will be used to represent the next char
-    hexval = "%X" % val                                                                     # Convert the int back to a hex value
+    val = (val + (incremental)) % 0x10                                                                      # Increment the int, this will be used to represent the next char
+    hexval = "%X" % val                                                                                     # Convert the int back to a hex value
    
-    list1 = list(string_of_file)                                                            # Do stupid python stuff
-    list1[index] = hexval                                                                   # Save new value to array
-    string_of_file = ''.join(list1)                                                         # Do more stupid python stuff
+    list1 = list(string_of_file)                                                                            # Do stupid python stuff
+    list1[index] = hexval                                                                                   # Save new value to array
+    string_of_file = ''.join(list1)                                                                         # Do more stupid python stuff
            
     if (thread_count > 1):
-           current_thread += 1                                                              # Increment thread_count
+           current_thread += 1                                                                              # Increment thread_count
     
-    if hexval == '0' and (index + 1) < len(string_of_file):                                 # Determine if next value to right needs to increment by one
-        return increment_by_one(string_of_file, index + 1, thread_count, current_thread)    # Recursivelly call this function for value to right
+    if hexval == '0' and (index + 1) < len(string_of_file):                                                 # Determine if next value to right needs to increment by one
+        return increment_by_one(string_of_file, index + 1, thread_count, current_thread, filename)         # Recursivelly call this function for value to right
 
     #print string_of_file
-    return string_of_file                                                                   # Return from first instance of recursive functions
+    return string_of_file                                                                                   # Return from first instance of recursive functions
 
 def continuing_hash_to_file(progress_lines):
     print progress_lines
@@ -224,14 +225,15 @@ def continuing_hash_to_file(progress_lines):
     t = 0
     try:
         for t in range(0, int(thread_count)):
-            print t
-            #Process(target=compute_file, args=(hashlib.md5(string_of_file).hexdigest().upper(), actual_hash, string_of_file, found, global_index, blacklisted_index, thread_count, current_thread)).start()
-            thread.start_new_thread( compute_file, (hashlib.md5(string_of_file).hexdigest().upper(), progress_lines[1], string_of_file, found, global_index, blacklisted_index, thread_count, current_thread))
-    except KeyboardInterrupt:
-        dump_current_progress()
-
-    print "Working..."
-
+            globals()['Process-%s' % t] = Process(target=compute_file, args=(hashlib.md5(string_of_file).hexdigest().upper(), actual_hash, string_of_file, found, global_index, blacklisted_index, thread_count, current_thread, filename))
+            globals()['Process-%s' % t].start()
+            print "Working..."
+            #globals()['Process-%s' % t].join()
+            #thread.start_new_thread( compute_file, (hashlib.md5(string_of_file).hexdigest().upper(), actual_hash, string_of_file, found, global_index, blacklisted_index, thread_count, current_thread))
+    except:
+        print "We are at the process spawn exception for continuing... Killing myself"
+        sys.exit(2)
+        
     while(not found):
         pass
     
@@ -243,39 +245,27 @@ def continuing_hash_to_file(progress_lines):
 ##    end = timer()
 ##
 ##    print "It took me ", end-start, " seconds!"
-##    
+##    I'll come back to making a hex editor for file so it actually outputs the file.
 ##    f = open(progress_lines[4], 'w+')
 ##    f.write(string_of_file)
 ##    f.close()
 
-def compute_file(curent_hash, real_hash, string_of_file, found, global_index, blacklisted_index, thread_count, current_thread):
-    while(curent_hash != real_hash):
-            #Increment and try again
-            if global_index not in blacklisted_index:
-                string_of_file = increment_by_one(string_of_file, global_index, thread_count, current_thread)
-            else:
-                global_index += 1
+def compute_file(curent_hash, real_hash, string_of_file2, found, global_index, blacklisted_index, thread_count, current_thread, filename):
+    try:
+        while(curent_hash != real_hash):
+                #Increment and try again
+                if global_index not in blacklisted_index:
+                    string_of_file2 = increment_by_one(string_of_file2, global_index, thread_count, current_thread, filename)
+                else:
+                    global_index += 1
+    except KeyboardInterrupt:
+        print "We are at compute_file exception: ", string_of_file2
+        print "Keeping this value"
+        dump_current_progress(thread_count, real_hash, string_of_file, global_index, blacklisted_index, filename)
 
-    print "Yay!"
-    found = 1
-    print "----"
-    print string_of_file
-    print "----"
-    end = timer()
 
-    print "It took me ", end-start, " seconds!"
-    
-    f = open(filename, 'w+')
-    f.write(string_of_file)
-    f.close()
-
-def dump_current_progress():
-    global string_of_file
+def dump_current_progress(thread_count, real_hash, string_of_file, global_index, blacklisted_index, filename):
     global end
-    global actual_hash
-    global global_index
-    global blacklisted_index
-    global temp4
     global start
     #Wow that's a lot of global variables
     print "===============Program Ended because of interrupt==================="
@@ -283,23 +273,37 @@ def dump_current_progress():
     end = timer()
     print "It took me ", end-start, " seconds until you stopped me!"
     progress_filename = "progress_"
-    progress_filename += temp4
+    progress_filename += filename
     progress = open(progress_filename, "w+")
     progress.write(string_of_file)
     progress.write("\n")
-    progress.write(actual_hash)
+    progress.write(real_hash)
     progress.write("\n")
     progress.write(str(global_index))
     progress.write("\n")
     progress.write(str(blacklisted_index))
     progress.write("\n")
-    progress.write(temp4)
+    progress.write(filename)
     progress.close()
     print "Dumping progress to file..."
+
+def we_got_him(string_of_file):
+    print "Yay!"
+    found = 1
+    print "----"
+    print string_of_file
+    print "----"
+    end = timer()
+
+    print "BROKEN: It took me ", end-start, " seconds!"
+    
+    f = open(filename, 'w+')
+    f.write(string_of_file)
+    f.close()
 
 if __name__ == "__main__":
     try:
         main(sys.argv[1:])
     except KeyboardInterrupt:
-        dump_current_progress()
+        #dump_current_progress(thread_count, string_of_file)
         sys.exit(0)
