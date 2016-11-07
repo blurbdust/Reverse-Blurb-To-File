@@ -2,6 +2,8 @@
 
 #As of 11/7/2016 @ 9:00am I decided on the name "blurb" for what this program makes and reverses. 
 
+TODO: Implement 	                   
+
 As of 9/6/2016 @ 2:52pm multi-core processing appears to work. I can in fact hit 100% CPU usage.
 http://imgur.com/a/NS6O4
 
