@@ -1,12 +1,14 @@
-#Reverse Hash Readme
+#Reverse Blurb Readme
+
+#As of 11/7/2016 @ 9:00am I decided on the name "blurb" for what this program makes and reverses. 
 
 As of 9/6/2016 @ 2:52pm multi-core processing appears to work. I can in fact hit 100% CPU usage.
 http://imgur.com/a/NS6O4
 
 ~~#IMPORTANT: Comment out lines 114-116 && 120-138 for this to run as of 8/10/16 @ 1:28am~~
 
-Specs of "hash":
-An example hash for a file with the arguments of “-i ./test.txt”
+Specs of blurb:
+An example blurb for a file with the arguments of “-i ./test.txt”
 * File name and extension’s hex value followed by hyphen
    * 746573742E747874
 * Add a delimiter stating new section
@@ -47,7 +49,7 @@ An example hash for a file with the arguments of “-i ./test.txt”
    * 9180801A5E24A242EB91953E41394EFB
 
 
-So the whole hash is:
+So the whole blurb is:
 `746573742E747874-00-49662079-20-6D65616E-20-2120416C-20-20224A6F-12-9180801A5E24A242EB91953E41394EFB`
 
 
@@ -60,9 +62,9 @@ Specs of Program:
    * iGPU as well (Intel)
    * CPU with multi-core/threads
    * Command line arguments: *=required useage
-   *  -i for input (hash or path to file)*
-   * -o for output (hash or path to file)*
-   * If input is a file and -o is blank print hash to screen
+   *  -i for input (blurb or path to file)*
+   * -o for output (blurb or path to file)*
+   * If input is a file and -o is blank print blurb to screen
    * -t to specify amount of cores/threads
    * -b to specify block size (default: 4)
    * -s to specify split amounts (default: 4)
@@ -71,7 +73,7 @@ Specs of Program:
 
 
 Goals:
-   * Generation of “hash” from file needs to be almost instant
+   * Generation of blurb from file needs to be almost instant
    * Compare to 300KB/s assuming constant speed
    * Example times: 
    * 1MB file in 3.4 second
